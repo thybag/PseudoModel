@@ -15,4 +15,9 @@ class TestModel extends PseudoModel {
 	{
 		return $this->exists;
 	}
+
+	public function setAsExists()
+	{
+		$this->exists = true;
+	}
 }

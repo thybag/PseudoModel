@@ -333,7 +333,7 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
             return false;
         }
 
-        $deleted = $this->persist('delete', $options);
+        $deleted = $this->persist('delete');
 
         // Once the model has been deleted, we will fire off the deleted event so that
         // the developers may hook into post-delete operations. We will then return
