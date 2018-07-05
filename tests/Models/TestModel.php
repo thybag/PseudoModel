@@ -1,7 +1,7 @@
 <?php
 namespace thybag\PseudoModel\Test\Models;
 
-use thybag\PseudoModel\PseudoModel;
+use thybag\PseudoModel\Models\PseudoModel;
 
 class TestModel extends PseudoModel {
 

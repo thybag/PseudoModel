@@ -1,6 +1,5 @@
 <?php
-
-namespace thybag\PseudoModel;
+namespace thybag\PseudoModel\Models;
 
 use ArrayAccess;
 use JsonSerializable;
