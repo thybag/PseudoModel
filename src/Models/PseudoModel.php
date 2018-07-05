@@ -262,7 +262,8 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
             } elseif ($totallyGuarded) {
                 throw new MassAssignmentException(sprintf(
                     'Add [%s] to fillable property to allow mass assignment on [%s].',
-                    $key, get_class($this)
+                    $key,
+                    get_class($this)
                 ));
             }
         }
@@ -384,7 +385,8 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
     public function replicate(array $except = null)
     {
         $attributes = Arr::except(
-            $this->attributes, $except
+            $this->attributes,
+            $except
         );
 
         return tap(new static, function ($instance) use ($attributes) {
@@ -404,9 +406,9 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
     }
 
      /**
-     * Override getIncrementing as we don't have db keys
-     * @return false
-     */
+      * Override getIncrementing as we don't have db keys
+      * @return false
+      */
     public function getIncrementing()
     {
         return false;
@@ -414,9 +416,9 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
 
     /**
      * Persist model changes. Called on save & delete.
-     * 
+     *
      * @param  string $action  create|update|delete
-     * @param  array  $options 
+     * @param  array  $options
      * @return boolean true|false
      */
     protected function persist($action, array $options = []): bool
