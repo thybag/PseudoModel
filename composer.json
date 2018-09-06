@@ -1,5 +1,5 @@
 {
-    "name": "thybag/PseudoModel",
+    "name": "thybag/pseudo-model",
     "description": "PseudoModel is an eloquent like model base for backing on to custom data structures.",
     "type": "library",
     "license": "MIT",
