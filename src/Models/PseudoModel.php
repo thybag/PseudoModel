@@ -26,6 +26,12 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
     use HasRelationships;
 
     /**
+     * The array of trait initializers that will be called on each new instance.
+     *
+     * @var array
+     */
+    protected static $traitInitializers = [];
+    /**
      * The array of booted models.
      *
      * @var array
@@ -43,7 +49,10 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
     {
         $this->bootIfNotBooted();
 
+        $this->initializeTraits();
+
         $this->syncOriginal();
+
         $this->fill($attributes);
     }
 
@@ -81,10 +90,20 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
     protected static function bootTraits()
     {
         $class = static::class;
-
+        $booted = [];
+        static::$traitInitializers[$class] = [];
         foreach (class_uses_recursive($class) as $trait) {
-            if (method_exists($class, $method = 'boot' . class_basename($trait))) {
+            $method = 'boot'.class_basename($trait);
+            if (method_exists($class, $method) && !in_array($method, $booted)) {
                 forward_static_call([$class, $method]);
+                $booted[] = $method;
+            }
+            $method = 'initialize'.class_basename($trait);
+            if (method_exists($class, $method)) {
+                static::$traitInitializers[$class][] = $method;
+                static::$traitInitializers[$class] = array_unique(
+                    static::$traitInitializers[$class]
+                );
             }
         }
     }
@@ -109,6 +128,18 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
         $new = static::instance($attributes);
         $new->save();
         return $new;
+    }
+
+    /**
+     * Initialize any initializable traits on the model.
+     *
+     * @return void
+     */
+    protected function initializeTraits()
+    {
+        foreach (static::$traitInitializers[static::class] as $method) {
+            $this->{$method}();
+        }
     }
 
     /**
