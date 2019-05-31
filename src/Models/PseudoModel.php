@@ -94,6 +94,16 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
         return static::instance($attributes);
     }
 
+    /**
+     * Clear the list of booted models so they will be re-booted.
+     *
+     * @return void
+     */
+    public static function clearBootedModels()
+    {
+        static::$booted = [];
+    }
+
     public static function create(array $attributes = [])
     {
         $new = static::instance($attributes);
