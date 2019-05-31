@@ -93,12 +93,12 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
         $booted = [];
         static::$traitInitializers[$class] = [];
         foreach (class_uses_recursive($class) as $trait) {
-            $method = 'boot'.class_basename($trait);
+            $method = 'boot' . class_basename($trait);
             if (method_exists($class, $method) && !in_array($method, $booted)) {
                 forward_static_call([$class, $method]);
                 $booted[] = $method;
             }
-            $method = 'initialize'.class_basename($trait);
+            $method = 'initialize' . class_basename($trait);
             if (method_exists($class, $method)) {
                 static::$traitInitializers[$class][] = $method;
                 static::$traitInitializers[$class] = array_unique(
