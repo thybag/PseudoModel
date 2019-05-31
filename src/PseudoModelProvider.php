@@ -15,4 +15,10 @@ class PseudoModelProvider extends ServiceProvider
         // Register for events
         PseudoModel::setEventDispatcher($this->app['events']);
     }
+
+    public function register()
+    {
+        // Reboot models for tests
+        PseudoModel::clearBootedModels();
+    }
 }
