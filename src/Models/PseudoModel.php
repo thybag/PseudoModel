@@ -340,7 +340,23 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
             return true;
         }
 
-        $saved = $this->persist($this->exists ? 'update' : 'create', $options);
+	$action = $this->exists ? 'update' : 'create';
+	if ($action == 'update') {	
+            if ($this->fireModelEvent('updating') === false) {
+                return false;
+            }
+            if ($this->fireModelEvent('updated') === false) {
+                return false;
+            }
+	} else {
+            if ($this->fireModelEvent('creating') === false) {
+                return false;
+            }
+            if ($this->fireModelEvent('created') === false) {
+                return false;
+            }
+	}
+        $saved = $this->persist($action, $options);
 
         // If the model is successfully saved, we need to do a few more things once
         // that is done. We will call the "saved" method here to run any actions
