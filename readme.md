@@ -1,4 +1,4 @@
-# PseudoModel [![Build Status](https://travis-ci.org/thybag/PseudoModel.svg?branch=master)](https://travis-ci.org/thybag/PseudoModel)
+# PseudoModel
 
 PseudoModel is an eloquent-like base model for laravel, aiming to mirror the majority of the laravels basic model functionality. 
 
