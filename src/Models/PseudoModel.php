@@ -42,6 +42,15 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
     protected $exists = false;
 
     /**
+     * Indicates if an exception should be thrown when trying to access a missing attribute on a retrieved model.
+     *
+     * @var bool
+     */
+    protected static $modelsShouldPreventAccessingMissingAttributes = false;
+
+    public $wasRecentlyCreated = false;
+
+    /**
      * Setup
      * @param array $attributes [description]
      */
@@ -481,5 +490,27 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
     protected function persist($action, array $options = []): bool
     {
         return true;
+    }
+
+    /**
+     * Determine if accessing missing attributes is disabled.
+     *
+     * @return bool
+     */
+    public static function preventsAccessingMissingAttributes()
+    {
+        return false;
+    }
+
+
+    /**
+     * Prevent accessing missing attributes on retrieved models.
+     *
+     * @param  bool  $value
+     * @return void
+     */
+    public static function preventAccessingMissingAttributes($value = true)
+    {
+        static::$modelsShouldPreventAccessingMissingAttributes = $value;
     }
 }
