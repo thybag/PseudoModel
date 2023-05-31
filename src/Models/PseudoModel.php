@@ -8,6 +8,7 @@ use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Concerns\HasEvents;
 use Illuminate\Database\Eloquent\Concerns\HasAttributes;
+use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
 use Illuminate\Database\Eloquent\Concerns\HidesAttributes;
 use Illuminate\Database\Eloquent\Concerns\GuardsAttributes;
 use Illuminate\Database\Eloquent\Concerns\HasRelationships;
@@ -24,6 +25,7 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
     use HidesAttributes;
     use GuardsAttributes;
     use HasRelationships;
+    use HasTimestamps;
 
     /**
      * The array of trait initializers that will be called on each new instance.
@@ -463,12 +465,15 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
     }
 
     /**
-     * Override getDates as we dont have timestamps
-     * @return [type] [description]
+     * Get the attributes that should be converted to dates.
+     * This is just here because Laravel might call it. Laravel only uses it for created-at/updated-at timestamps which are not
+     * relevant for a Pseudomodel.
+     *
+     * @return array
      */
     public function getDates()
     {
-        return $this->dates;
+        return [];
     }
 
      /**
