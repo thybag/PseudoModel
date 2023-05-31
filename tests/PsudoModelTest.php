@@ -142,10 +142,8 @@ class PseudoModelTest extends TestCase
         $this->expectException(PersistException::class);
 
         $mock = Mockery::mock(TestModel::class)->shouldAllowMockingProtectedMethods()->makePartial();
-        $mock->shouldReceive('persist')->with('create', Mockery::any())->once()->andReturn(false);
-        $mock->fill(['name' => 'test']);
-
-
-        $mock->updateOrFail();
+        $mock->shouldReceive('persist')->with('update', Mockery::any())->once()->andReturn(false);
+        $mock->setAsExists();
+        $mock->updateOrFail(['name' => 'test']);
     }
 }
