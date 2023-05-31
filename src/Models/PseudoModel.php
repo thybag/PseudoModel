@@ -6,24 +6,37 @@ use JsonSerializable;
 use Illuminate\Support\Str;
 use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Contracts\Support\Arrayable;
+use thybag\PseudoModel\Exceptions\PersistException;
 use Illuminate\Database\Eloquent\Concerns\HasEvents;
 use Illuminate\Database\Eloquent\Concerns\HasAttributes;
+use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
+use Illuminate\Database\Eloquent\Concerns\HasUniqueIds;
 use Illuminate\Database\Eloquent\Concerns\HidesAttributes;
 use Illuminate\Database\Eloquent\Concerns\GuardsAttributes;
 use Illuminate\Database\Eloquent\Concerns\HasRelationships;
+use Illuminate\Contracts\Broadcasting\HasBroadcastChannel;
+use Illuminate\Contracts\Support\CanBeEscapedWhenCastToString;
 
 /**
  * Class PseudoModels
  *
  * A Non-Eloquent Model base
  */
-abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSerializable
+abstract class PseudoModel implements
+    ArrayAccess,
+    Arrayable,
+    Jsonable,
+    JsonSerializable,
+    HasBroadcastChannel,
+    CanBeEscapedWhenCastToString
 {
     use HasEvents;
     use HasAttributes;
     use HidesAttributes;
     use GuardsAttributes;
     use HasRelationships;
+    use HasTimestamps;
+    use HasUniqueIds;
 
     /**
      * The array of trait initializers that will be called on each new instance.
@@ -48,7 +61,59 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
      */
     protected static $modelsShouldPreventAccessingMissingAttributes = false;
 
+    /**
+     * Indicates that the object's string representation should be escaped when __toString is invoked.
+     *
+     * @var bool
+     */
+    protected $escapeWhenCastingToString = false;
+
     public $wasRecentlyCreated = false;
+
+    /**
+     * Indicates whether lazy loading should be restricted on all models.
+     *
+     * @var bool
+     */
+    protected static $modelsShouldPreventLazyLoading = false;
+
+    /**
+     * The callback that is responsible for handling lazy loading violations.
+     *
+     * @var callable|null
+     */
+    protected static $lazyLoadingViolationCallback;
+
+    /**
+     * Indicates if an exception should be thrown instead of silently discarding non-fillable attributes.
+     *
+     * @var bool
+     */
+    protected static $modelsShouldPreventSilentlyDiscardingAttributes = false;
+
+    /**
+     * The callback that is responsible for handling discarded attribute violations.
+     *
+     * @var callable|null
+     */
+    protected static $discardedAttributeViolationCallback;
+
+
+    /**
+     * The callback that is responsible for handling missing attribute violations.
+     *
+     * @var callable|null
+     */
+    protected static $missingAttributeViolationCallback;
+
+    /**
+     * Indicates if broadcasting is currently enabled.
+     *
+     * @var bool
+     */
+    protected static $isBroadcasting = true;
+
+
 
     /**
      * Setup
@@ -76,9 +141,21 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
             static::$booted[static::class] = true;
 
             $this->fireModelEvent('booting', false);
+            static::booting();
             static::boot();
+            static::booted();
+
             $this->fireModelEvent('booted', false);
         }
+    }
+
+    /**
+     * Perform any actions required before the model boots.
+     *
+     * @return void
+     */
+    protected static function booting()
+    {
     }
 
     /**
@@ -120,6 +197,15 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
     public static function make(array $attributes = [])
     {
         return static::instance($attributes);
+    }
+
+    /**
+     * Perform any actions required after the model boots.
+     *
+     * @return void
+     */
+    protected static function booted()
+    {
     }
 
     /**
@@ -290,6 +376,92 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
         return $this->toArray();
     }
 
+ /**
+  * Indicate that models should prevent lazy loading, silently discarding attributes, and accessing missing attributes.
+  *
+  * @param  bool  $shouldBeStrict
+  * @return void
+  */
+    public static function shouldBeStrict(bool $shouldBeStrict = true)
+    {
+        static::preventLazyLoading($shouldBeStrict);
+        static::preventSilentlyDiscardingAttributes($shouldBeStrict);
+        static::preventAccessingMissingAttributes($shouldBeStrict);
+    }
+
+    /**
+     * Prevent model relationships from being lazy loaded.
+     *
+     * @param  bool  $value
+     * @return void
+     */
+    public static function preventLazyLoading($value = true)
+    {
+        static::$modelsShouldPreventLazyLoading = $value;
+    }
+
+    /**
+     * Register a callback that is responsible for handling lazy loading violations.
+     *
+     * @param  callable|null  $callback
+     * @return void
+     */
+    public static function handleLazyLoadingViolationUsing(?callable $callback)
+    {
+        static::$lazyLoadingViolationCallback = $callback;
+    }
+
+    /**
+     * Prevent non-fillable attributes from being silently discarded.
+     *
+     * @param  bool  $value
+     * @return void
+     */
+    public static function preventSilentlyDiscardingAttributes($value = true)
+    {
+        static::$modelsShouldPreventSilentlyDiscardingAttributes = $value;
+    }
+
+    /**
+     * Register a callback that is responsible for handling discarded attribute violations.
+     *
+     * @param  callable|null  $callback
+     * @return void
+     */
+    public static function handleDiscardedAttributeViolationUsing(?callable $callback)
+    {
+        static::$discardedAttributeViolationCallback = $callback;
+    }
+
+    /**
+     * Register a callback that is responsible for handling missing attribute violations.
+     *
+     * @param  callable|null  $callback
+     * @return void
+     */
+    public static function handleMissingAttributeViolationUsing(?callable $callback)
+    {
+        static::$missingAttributeViolationCallback = $callback;
+    }
+
+    /**
+     * Execute a callback without broadcasting any model events for all model types.
+     *
+     * @param  callable  $callback
+     * @return mixed
+     */
+    public static function withoutBroadcasting(callable $callback)
+    {
+        $isBroadcasting = static::$isBroadcasting;
+
+        static::$isBroadcasting = false;
+
+        try {
+            return $callback();
+        } finally {
+            static::$isBroadcasting = $isBroadcasting;
+        }
+    }
 
     /**
      * Fill the model with an array of attributes.
@@ -337,6 +509,8 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
 
     public function save(array $options = []): bool
     {
+        $this->mergeAttributesFromCachedCasts();
+
         // If the "saving" event returns false we'll bail out of the save and return
         // false, indicating that the save failed. This provides a chance for any
         // listeners to cancel save operations if validations fail or whatever.
@@ -371,13 +545,94 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
         // that is done. We will call the "saved" method here to run any actions
         // we need to happen after a model gets successfully saved right here.
         if ($saved) {
-            $this->fireModelEvent('saved', false);
-            $this->syncOriginal();
-            $this->exists = true;
+            $this->finishSave($options);
         }
 
         return $saved;
     }
+
+    /**
+     * Save the model to the database without raising any events.
+     *
+     * @param  array  $options
+     * @return bool
+     */
+    public function saveQuietly(array $options = [])
+    {
+        return static::withoutEvents(fn () => $this->save($options));
+    }
+
+    public function saveOrFail(array $options = [])
+    {
+        if (!$this->save($options)) {
+            throw new PersistException("Unable to persist model.");
+        };
+    }
+
+    /**
+     * Perform any actions that are necessary after the model is saved.
+     *
+     * @param  array  $options
+     * @return void
+     */
+    protected function finishSave(array $options)
+    {
+        $this->fireModelEvent('saved', false);
+        // This normally hapopoens as part of `performInsert`
+        $this->exists = true;
+        $this->syncOriginal();
+    }
+
+        /**
+         * Update the model in the database.
+         *
+         * @param  array  $attributes
+         * @param  array  $options
+         * @return bool
+         */
+    public function update(array $attributes = [], array $options = [])
+    {
+        if (! $this->exists) {
+            return false;
+        }
+
+        return $this->fill($attributes)->save($options);
+    }
+
+    /**
+     * Update the model in the database within a transaction.
+     *
+     * @param  array  $attributes
+     * @param  array  $options
+     * @return bool
+     *
+     * @throws \Throwable
+     */
+    public function updateOrFail(array $attributes = [], array $options = [])
+    {
+        if (! $this->exists) {
+            return false;
+        }
+
+        return $this->fill($attributes)->saveOrFail($options);
+    }
+
+    /**
+     * Update the model in the database without raising any events.
+     *
+     * @param  array  $attributes
+     * @param  array  $options
+     * @return bool
+     */
+    public function updateQuietly(array $attributes = [], array $options = [])
+    {
+        if (! $this->exists) {
+            return false;
+        }
+
+        return $this->fill($attributes)->saveQuietly($options);
+    }
+
 
     /**
      * Delete the model from the database.
@@ -463,12 +718,15 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
     }
 
     /**
-     * Override getDates as we dont have timestamps
-     * @return [type] [description]
+     * Get the attributes that should be converted to dates.
+     * This is just here because Laravel might call it. Laravel only uses it for created-at/updated-at
+     * timestamps which are not relevant for a Pseudomodel.
+     *
+     * @return array
      */
     public function getDates()
     {
-        return $this->dates;
+        return [];
     }
 
      /**
@@ -512,5 +770,50 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
     public static function preventAccessingMissingAttributes($value = true)
     {
         static::$modelsShouldPreventAccessingMissingAttributes = $value;
+    }
+
+    /**
+     * Get the broadcast channel route definition that is associated with the given entity.
+     *
+     * @return string
+     */
+    public function broadcastChannelRoute()
+    {
+        return str_replace('\\', '.', get_class($this)) . '.{' . Str::camel(class_basename($this)) . '}';
+    }
+
+    /**
+     * Get the broadcast channel name that is associated with the given entity.
+     *
+     * @return string
+     */
+    public function broadcastChannel()
+    {
+        return str_replace('\\', '.', get_class($this)) . '.' . $this->getKey();
+    }
+
+    /**
+     * Convert the model to its string representation.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->escapeWhenCastingToString
+            ? e($this->toJson())
+            : $this->toJson();
+    }
+
+    /**
+     * Indicate that the object's string representation should be escaped when __toString is invoked.
+     *
+     * @param  bool  $escape
+     * @return $this
+     */
+    public function escapeWhenCastingToString($escape = true)
+    {
+        $this->escapeWhenCastingToString = $escape;
+
+        return $this;
     }
 }
