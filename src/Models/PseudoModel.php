@@ -466,8 +466,8 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
 
     /**
      * Get the attributes that should be converted to dates.
-     * This is just here because Laravel might call it. Laravel only uses it for created-at/updated-at timestamps which are not
-     * relevant for a Pseudomodel.
+     * This is just here because Laravel might call it. Laravel only uses it for created-at/updated-at
+     * timestamps which are not relevant for a Pseudomodel.
      *
      * @return array
      */
