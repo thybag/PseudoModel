@@ -22,7 +22,13 @@ use Illuminate\Contracts\Support\CanBeEscapedWhenCastToString;
  *
  * A Non-Eloquent Model base
  */
-abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSerializable, HasBroadcastChannel, CanBeEscapedWhenCastToString
+abstract class PseudoModel implements
+    ArrayAccess,
+    Arrayable,
+    Jsonable,
+    JsonSerializable,
+    HasBroadcastChannel,
+    CanBeEscapedWhenCastToString
 {
     use HasEvents;
     use HasAttributes;
@@ -150,7 +156,6 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
      */
     protected static function booting()
     {
-        //
     }
 
     /**
@@ -201,7 +206,6 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
      */
     protected static function booted()
     {
-        //
     }
 
     /**
@@ -373,11 +377,11 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
     }
 
  /**
-     * Indicate that models should prevent lazy loading, silently discarding attributes, and accessing missing attributes.
-     *
-     * @param  bool  $shouldBeStrict
-     * @return void
-     */
+  * Indicate that models should prevent lazy loading, silently discarding attributes, and accessing missing attributes.
+  *
+  * @param  bool  $shouldBeStrict
+  * @return void
+  */
     public static function shouldBeStrict(bool $shouldBeStrict = true)
     {
         static::preventLazyLoading($shouldBeStrict);
@@ -542,7 +546,6 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
         // we need to happen after a model gets successfully saved right here.
         if ($saved) {
             $this->finishSave($options);
-            
         }
 
         return $saved;
@@ -581,12 +584,12 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
     }
 
         /**
-     * Update the model in the database.
-     *
-     * @param  array  $attributes
-     * @param  array  $options
-     * @return bool
-     */
+         * Update the model in the database.
+         *
+         * @param  array  $attributes
+         * @param  array  $options
+         * @return bool
+         */
     public function update(array $attributes = [], array $options = [])
     {
         if (! $this->exists) {
@@ -776,7 +779,7 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
      */
     public function broadcastChannelRoute()
     {
-        return str_replace('\\', '.', get_class($this)).'.{'.Str::camel(class_basename($this)).'}';
+        return str_replace('\\', '.', get_class($this)) . '.{' . Str::camel(class_basename($this)) . '}';
     }
 
     /**
@@ -786,7 +789,7 @@ abstract class PseudoModel implements ArrayAccess, Arrayable, Jsonable, JsonSeri
      */
     public function broadcastChannel()
     {
-        return str_replace('\\', '.', get_class($this)).'.'.$this->getKey();
+        return str_replace('\\', '.', get_class($this)) . '.' . $this->getKey();
     }
 
     /**

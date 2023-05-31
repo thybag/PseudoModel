@@ -4,6 +4,7 @@ namespace thybag\PseudoModel\Test;
 use Mockery;
 use Orchestra\Testbench\TestCase;
 use thybag\PseudoModel\Test\Models\TestModel;
+use thybag\PseudoModel\Exceptions\PersistException;
 
 class PseudoModelTest extends TestCase
 {
@@ -122,5 +123,29 @@ class PseudoModelTest extends TestCase
         $mock->shouldReceive('persist')->with('delete')->once()->andReturn(false);
         
         $mock->delete();
+    }
+
+    public function testSavePersistOrFail()
+    {
+        $this->expectException(PersistException::class);
+
+        $mock = Mockery::mock(TestModel::class)->shouldAllowMockingProtectedMethods()->makePartial();
+        $mock->shouldReceive('persist')->with('create', Mockery::any())->once()->andReturn(false);
+        $mock->fill(['name' => 'test']);
+
+
+        $mock->saveOrFail();
+    }
+
+    public function testUpdatePersistOrFail()
+    {
+        $this->expectException(PersistException::class);
+
+        $mock = Mockery::mock(TestModel::class)->shouldAllowMockingProtectedMethods()->makePartial();
+        $mock->shouldReceive('persist')->with('create', Mockery::any())->once()->andReturn(false);
+        $mock->fill(['name' => 'test']);
+
+
+        $mock->updateOrFail();
     }
 }

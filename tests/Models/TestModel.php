@@ -5,7 +5,6 @@ use thybag\PseudoModel\Models\PseudoModel;
 
 class TestModel extends PseudoModel
 {
-
     protected $fillable = [
         'name',
         'type',

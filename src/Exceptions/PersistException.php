@@ -2,6 +2,9 @@
 
 namespace thybag\PseudoModel\Exceptions;
 
-class PersistException extends Exception {
+use Exception;
+
+class PersistException extends Exception
+{
 
 }
