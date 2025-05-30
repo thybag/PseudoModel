@@ -816,4 +816,14 @@ abstract class PseudoModel implements
 
         return $this;
     }
+
+
+    /**
+     * Called by HasEvents
+     * @return void
+     */
+    public static function whenBooted()
+    {
+        return;
+    }
 }
