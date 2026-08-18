@@ -1,7 +1,9 @@
 <?php
 namespace thybag\PseudoModel\Models;
 
+use Exception;
 use ArrayAccess;
+use ReflectionClass;
 use JsonSerializable;
 use Illuminate\Support\Str;
 use Illuminate\Contracts\Support\Jsonable;
@@ -53,6 +55,9 @@ abstract class PseudoModel implements
     protected static $dispatcher;
 
     protected $exists = false;
+
+    protected static array $classAttributes = [];
+
 
     /**
      * Indicates if an exception should be thrown when trying to access a missing attribute on a retrieved model.
@@ -216,6 +221,54 @@ abstract class PseudoModel implements
     public static function clearBootedModels()
     {
         static::$booted = [];
+    }
+
+    /**
+     * Copied from Laravel for compatibility. Resolves attributes.
+     * @param string $attributeClass
+     * @param string|null $property
+     * @param string|null $class
+     * @return mixed|object|null
+     */
+    protected static function resolveClassAttribute(
+        string $attributeClass,
+        ?string $property = null,
+        ?string $class = null
+    ) {
+        $class ??= static::class;
+
+        $cacheKey = $class . '@' . $attributeClass . '@' . $property;
+
+        if (array_key_exists($cacheKey, static::$classAttributes)) {
+            return static::$classAttributes[$cacheKey];
+        }
+
+        try {
+            $reflection = new ReflectionClass($class);
+
+            do {
+                $attributes = $reflection->getAttributes($attributeClass);
+
+                if (count($attributes) > 0) {
+                    $instance = $attributes[0]->newInstance();
+
+                    return static::$classAttributes[$cacheKey] = $property ? $instance->{$property} : $instance;
+                }
+
+                foreach ($reflection->getTraits() as $trait) {
+                    $attributes = $trait->getAttributes($attributeClass);
+
+                    if (count($attributes) > 0) {
+                        $instance = $attributes[0]->newInstance();
+
+                        return static::$classAttributes[$cacheKey] = $property ? $instance->{$property} : $instance;
+                    }
+                }
+            } while ($reflection = $reflection->getParentClass());
+        } catch (Exception) {
+        }
+
+        return static::$classAttributes[$cacheKey] = null;
     }
 
     public static function create(array $attributes = [])
