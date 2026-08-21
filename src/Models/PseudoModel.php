@@ -281,6 +281,7 @@ abstract class PseudoModel implements
                 }
             } while ($reflection = $reflection->getParentClass());
         } catch (Exception) {
+            // Laravel does nothing here, so we do nothing too
         }
 
         return static::$classAttributes[$cacheKey] = null;
