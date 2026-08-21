@@ -1,6 +1,7 @@
 <?php
 namespace thybag\PseudoModel\Models;
 
+use Closure;
 use Exception;
 use ArrayAccess;
 use ReflectionClass;
@@ -118,6 +119,13 @@ abstract class PseudoModel implements
      */
     protected static $isBroadcasting = true;
 
+    /**
+     * The callbacks that should be executed after the model has booted.
+     *
+     * @var array
+     */
+    protected static $bootedCallbacks = [];
+
 
 
     /**
@@ -149,6 +157,12 @@ abstract class PseudoModel implements
             static::booting();
             static::boot();
             static::booted();
+
+            static::$bootedCallbacks[static::class] ??= [];
+
+            foreach (static::$bootedCallbacks[static::class] as $callback) {
+                $callback();
+            }
 
             $this->fireModelEvent('booted', false);
         }
@@ -220,6 +234,7 @@ abstract class PseudoModel implements
      */
     public static function clearBootedModels()
     {
+        static::$bootedCallbacks = [];
         static::$booted = [];
     }
 
@@ -266,6 +281,7 @@ abstract class PseudoModel implements
                 }
             } while ($reflection = $reflection->getParentClass());
         } catch (Exception) {
+            // Laravel does nothing here, so we do nothing too
         }
 
         return static::$classAttributes[$cacheKey] = null;
@@ -872,11 +888,15 @@ abstract class PseudoModel implements
 
 
     /**
-     * Called by HasEvents
+     * Register a closure to be executed after the model has booted.
+     *
+     * @param  \Closure  $callback
      * @return void
      */
-    public static function whenBooted()
+    protected static function whenBooted(Closure $callback)
     {
-        return;
+        static::$bootedCallbacks[static::class] ??= [];
+
+        static::$bootedCallbacks[static::class][] = $callback;
     }
 }

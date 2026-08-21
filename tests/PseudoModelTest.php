@@ -3,7 +3,9 @@ namespace thybag\PseudoModel\Test;
 
 use Mockery;
 use Orchestra\Testbench\TestCase;
+use thybag\PseudoModel\Models\PseudoModel;
 use thybag\PseudoModel\Test\Models\TestModel;
+use App\Core\Observers\ModelValidationObserver;
 use thybag\PseudoModel\Exceptions\PersistException;
 
 class PseudoModelTest extends TestCase
@@ -30,6 +32,26 @@ class PseudoModelTest extends TestCase
 
         $this->assertTrue($test->doesModelExist());
         $this->assertFalse($test->isDirty());
+    }
+
+    /**
+     * Check that any whenBooted callbacks are executed when the model is constructed
+     * @return void
+     */
+    public function testBootedCallbacks()
+    {
+        $callbackRan = false;
+
+        $model = new class([], $callbackRan) extends PseudoModel {
+            public function __construct($attributes = array(), bool &$callbackRan = false)
+            {
+                static::whenBooted(function () use (&$callbackRan) {
+                    $callbackRan = true;
+                });
+                parent::__construct($attributes);
+            }
+        };
+        $this->assertTrue($callbackRan);
     }
 
     public function testNew()
